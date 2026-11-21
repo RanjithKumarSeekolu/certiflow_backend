@@ -1,0 +1,98 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: certiflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - certiflow_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d certiflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672" # management UI: http://localhost:15672 (guest / guest, local only)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+
+  # One-shot: apply migrations and seed demo data, then exit.
+  migrate:
+    build:
+      context: .
+      target: builder
+    command: sh -c "npx prisma migrate deploy && npx tsx prisma/seed.ts"
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgrespassword@postgres:5432/certiflow?schema=public"
+      DIRECT_URL: "postgresql://postgres:postgrespassword@postgres:5432/certiflow?schema=public"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend: &app
+    image: certiflow-app
+    build:
+      context: .
+    restart: always
+    environment: &env
+      PORT: 8081
+      NODE_ENV: production
+      DATABASE_URL: "postgresql://postgres:postgrespassword@postgres:5432/certiflow?schema=public"
+      DIRECT_URL: "postgresql://postgres:postgrespassword@postgres:5432/certiflow?schema=public"
+      REDIS_URL: "redis://redis:6379"
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
+      JWT_SECRET: "${JWT_SECRET:?set JWT_SECRET in .env}"
+      DEMO_MODE: "${DEMO_MODE:-true}"
+      PUBLIC_APP_URL: "http://localhost:8081"
+    ports:
+      - "8081:8081"
+    volumes:
+      - certiflow_files:/app/uploads # PDFs: shared by API (download) and workers (render); S3 in production
+    depends_on: &deps
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  # Same image as the API (built once by `backend`). Scale with: docker compose up --scale worker=3
+  worker:
+    image: certiflow-app
+    pull_policy: never
+    restart: always
+    command: ["node", "dist/worker.js"]
+    environment: *env
+    volumes:
+      - certiflow_files:/app/uploads
+    depends_on:
+      <<: *deps
+      backend:
+        condition: service_started
+
+volumes:
+  certiflow_pgdata:
+  certiflow_files:
