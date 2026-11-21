@@ -5,7 +5,7 @@ Needs Node 20+, npm 10+, and Docker.
 ## Fastest path: everything in containers
 
 ```bash
-cp .env.example .env     # then set JWT_SECRET (openssl rand -hex 32)
+cp .env.example .env     # JWT_SECRET is optional for this local demo (a demo default is used); set a real one anywhere else
 docker compose up --build
 ```
 

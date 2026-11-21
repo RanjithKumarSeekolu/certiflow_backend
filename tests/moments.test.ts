@@ -201,6 +201,24 @@ describe("Moment 4: cancel a certificate, verification reflects it immediately",
     expect((await request(app).get(`/api/certificates/${cert.id}/download?token=${good}`)).status).toBe(410);
   });
 
+  it("shows delivery status on the batch and gives staff a working download link", async () => {
+    const cert = await issueOne();
+    const detail = await as("farah", "get", `/api/batches/${cert.batchId}`).send();
+    const c = detail.body.certificates.find((x: { id: string }) => x.id === cert.id);
+    expect(c.deliveryJobs[0].status).toBe("COMPLETED");
+    expect(JSON.stringify(detail.body.certificates)).not.toMatch(/verificationHash|pdfUrl/);
+
+    for (const who of ["farah", "anika"] as const) {
+      const link = await as(who, "post", `/api/certificates/${cert.id}/download-link`).send();
+      expect(link.status).toBe(200);
+      const file = await request(app).get(link.body.url);
+      expect(file.status).toBe(200);
+      expect(file.headers["content-type"]).toContain("pdf");
+    }
+    expect((await as("dev", "post", `/api/certificates/${cert.id}/download-link`).send()).status).toBe(403);
+    expect((await request(app).post(`/api/certificates/${cert.id}/download-link`).send()).status).toBe(401);
+  });
+
   it("returns 404 for an unknown certificate", async () => {
     const res = await request(app).get("/api/verify/CERT-2026-DOESNOTEXIST");
     expect(res.status).toBe(404);

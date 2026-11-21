@@ -64,7 +64,7 @@ services:
       DIRECT_URL: "postgresql://postgres:postgrespassword@postgres:5432/certiflow?schema=public"
       REDIS_URL: "redis://redis:6379"
       RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672"
-      JWT_SECRET: "${JWT_SECRET:?set JWT_SECRET in .env}"
+      JWT_SECRET: "${JWT_SECRET:-local-demo-secret-change-me}" # demo default; set a real one in .env anywhere else
       DEMO_MODE: "${DEMO_MODE:-true}"
       PUBLIC_APP_URL: "http://localhost:8081"
     ports:

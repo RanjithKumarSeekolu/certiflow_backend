@@ -228,6 +228,21 @@ export class CertificateService {
     };
   }
 
+  /**
+   * Staff-requested download link (state office, or the centre that owns the batch). Short-lived and
+   * relative, so it works through whatever host fronts the API. The candidate's own link is sent on WhatsApp.
+   */
+  public static async createDownloadLink(certificateId: string, user: { id: string; role: string }) {
+    const certificate = await prisma.certificate.findUnique({
+      where: { id: certificateId },
+      include: { batch: { include: { centre: true } } },
+    });
+    if (!certificate) throw new CertificateError("Certificate not found", 404);
+    const owns = user.role === Role.CENTRE && certificate.batch.centre.userId === user.id;
+    if (user.role !== Role.STATE_OFFICE && !owns) throw new CertificateError("Not allowed to download this certificate", 403);
+    return { url: `/api/certificates/${certificate.id}/download?token=${signDownloadToken(certificate.id, 3600)}`, expiresInSeconds: 3600 };
+  }
+
   /** Resolves a signed download link to a file path. The link is the only credential. */
   public static async resolveDownload(certificateId: string, token: string): Promise<{ filePath: string; fileName: string }> {
     if (!token || !verifyDownloadToken(certificateId, token)) {

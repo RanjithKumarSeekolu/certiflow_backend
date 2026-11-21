@@ -22,8 +22,8 @@ describe("API docs", () => {
     expect(spec.body.openapi).toMatch(/^3\./);
   });
 
-  it("documents all 19 endpoints", () => {
-    expect(operations).toHaveLength(19);
+  it("documents all 20 endpoints", () => {
+    expect(operations).toHaveLength(20);
   });
 
   it("every documented response schema reference exists", () => {

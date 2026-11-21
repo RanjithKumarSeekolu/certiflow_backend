@@ -43,6 +43,14 @@ export class CertificateController {
     }
   }
 
+  static async downloadLink(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      res.json(await CertificateService.createDownloadLink(String(req.params.id), req.user!));
+    } catch (err) {
+      fail(res, err);
+    }
+  }
+
   static async download(req: Request, res: Response): Promise<void> {
     try {
       const { filePath, fileName } = await CertificateService.resolveDownload(String(req.params.id), String(req.query.token ?? ""));

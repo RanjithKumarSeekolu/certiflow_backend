@@ -153,7 +153,12 @@ export const openapi = {
         type: "object",
         properties: {
           id: { type: "string", format: "uuid" }, certificateNumber: { type: "string", example: "CERT-2026-8EFC05CAC356B057" },
+          candidateId: { type: "string" },
           status: { type: "string", enum: ["VALID", "REVOKED"] }, issuedAt: { type: "string", format: "date-time" },
+          deliveryJobs: {
+            type: "array", description: "WhatsApp delivery state (PENDING, PROCESSING, COMPLETED, FAILED)",
+            items: { type: "object", properties: { status: { type: "string" }, attempts: { type: "integer" }, lastError: { type: "string", nullable: true }, deliveredAt: { type: "string", format: "date-time", nullable: true } } },
+          },
           revokedAt: { type: "string", format: "date-time", nullable: true }, revocationReason: { type: "string", nullable: true },
         },
       },
@@ -281,6 +286,17 @@ export const openapi = {
         description: "Normally unnecessary: approval already queues issuance. Use it to re-open deliveries that exhausted their retries (FAILED). Safe to call repeatedly.",
         security: secured, parameters: [idParam("batchId", "Batch id")],
         responses: { "202": { description: "Queued", content: json(ref("Queued")) }, "401": r401, "403": r403, "404": r404, "409": err("Batch is not APPROVED") },
+      },
+    },
+    "/api/certificates/{id}/download-link": {
+      post: {
+        tags: ["State office", "Centre"], summary: "Get a fresh signed download link for a certificate",
+        description: "State office, or the centre that owns the batch. The link is relative and valid for one hour; open it to download the PDF.",
+        security: secured, parameters: [idParam("id", "Certificate id")],
+        responses: {
+          "200": { description: "Signed link", content: json({ type: "object", properties: { url: { type: "string" }, expiresInSeconds: { type: "integer" } } }) },
+          "401": r401, "403": r403, "404": r404,
+        },
       },
     },
     "/api/certificates/{id}/revoke": {

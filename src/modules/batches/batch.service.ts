@@ -106,7 +106,13 @@ export class BatchService {
           include: { officer: { select: { id: true, name: true, role: true } } },
           orderBy: { createdAt: "asc" },
         },
-        certificates: true,
+        certificates: {
+          select: {
+            id: true, certificateNumber: true, candidateId: true, status: true, issuedAt: true,
+            revokedAt: true, revocationReason: true,
+            deliveryJobs: { select: { status: true, attempts: true, lastError: true, deliveredAt: true } },
+          },
+        },
         auditLogs: { orderBy: { timestamp: "desc" } },
       },
     });

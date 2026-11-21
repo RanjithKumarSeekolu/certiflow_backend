@@ -90,6 +90,8 @@ The Pragati Skills Mission certifies ~8,000 vocational students monthly across 3
 
 ## 6. API at a glance
 
+The web UI is in the separate `certiflow_frontend` repo (React + Vite). With both repos cloned side by side, `docker compose -f docker-compose.full.yml up --build` there starts everything.
+
 Interactive docs (Swagger UI) at **`/api/docs`** once the API is running (e.g. http://localhost:8081/api/docs); raw OpenAPI JSON at `/api/docs.json` (import into Postman). Source: `src/docs/openapi.ts`; a test checks it against the app's auth rules.
 
 | Who | Endpoints |
@@ -98,7 +100,7 @@ Interactive docs (Swagger UI) at **`/api/docs`** once the API is running (e.g. h
 | Auth | `POST /api/auth/login`, `POST /api/auth/demo-login` (demo only), `GET /api/auth/me` |
 | Centre | `POST /api/batches`, `POST /api/batches/:id/upload` (xlsx/csv), `POST .../submit`, `POST .../resubmit` |
 | Officers | `GET /api/batches?inbox=true` (waiting for me), `GET /api/batches/:id` (candidates, approvals, audit trail), `POST .../district-review`, `.../quality-review`, `.../state-review` |
-| State office | `GET /api/batches/stuck`, `POST /api/certificates/:id/revoke`, `POST /api/certificates/batch/:id/issue` (re-drive) |
+| State office | `GET /api/batches/stuck`, `POST /api/certificates/:id/revoke`, `POST /api/certificates/batch/:id/issue` (re-drive), `POST /api/certificates/:id/download-link` (also the owning centre) |
 | Realtime | Socket.IO, `auth: { token }`; events `batch.updated`, `certificates.issued`, `certificate.delivered`, `certificate.delivery_failed`, `certificate.revoked`, `batch.sla_breached` |
 
 Candidates, centres, approvals and audit entries are not separate resources: candidates arrive with the upload, centres are seeded, and approvals and the audit trail come back on the batch detail. Candidates do not log in; they get their certificate by WhatsApp. "Notifications" are the WhatsApp message to candidates and the realtime events to staff; there is no stored in-app notification feed.
