@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import swaggerUi from "swagger-ui-express";
+import { openapi } from "./docs/openapi";
 import { corsOrigins } from "./config/env";
 import authRouter from "./modules/auth/auth.router";
 import batchRouter from "./modules/batches/batch.router";
@@ -28,6 +30,10 @@ app.get("/", (_req, res) => {
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
+
+// API docs: Swagger UI plus the raw spec (importable into Postman)
+app.get("/api/docs.json", (_req, res) => res.json(openapi));
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openapi, { customSiteTitle: "CertiFlow API" }));
 
 // Mount module routers
 app.use("/api/auth", authRouter);

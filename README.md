@@ -90,6 +90,8 @@ The Pragati Skills Mission certifies ~8,000 vocational students monthly across 3
 
 ## 6. API at a glance
 
+Interactive docs (Swagger UI) at **`/api/docs`** once the API is running (e.g. http://localhost:8081/api/docs); raw OpenAPI JSON at `/api/docs.json` (import into Postman). Source: `src/docs/openapi.ts`; a test checks it against the app's auth rules.
+
 | Who | Endpoints |
 |---|---|
 | Anyone | `GET /api/verify/:certificateNumber`, `GET /api/certificates/:id/download?token=` (signed link), `GET /health` |

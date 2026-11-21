@@ -44,6 +44,8 @@ npm run dev          # API on http://localhost:8081, health: GET /health
 npm run dev:worker   # in a second terminal: queue consumers, sweeper, SLA scan
 ```
 
+API docs and a try-it-out console: http://localhost:8081/api/docs
+
 Reviewers can switch persona without a password while `DEMO_MODE=true`:
 
 ```bash
